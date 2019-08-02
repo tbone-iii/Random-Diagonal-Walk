@@ -5,13 +5,13 @@ from typing import Tuple
 import winsound
 
 # Initialize number of points
-NUM_OF_POINTS = 10
+NUM_OF_POINTS = 100
 
 # Establish the origin position; (0, 0) is the typical tuple
 ORIGIN = (0, 0)
 
 # Establish the time difference (essentially, the speed)
-TIME_DELTA_MS = 200
+TIME_DELTA_MS = 150
 
 # Bool for whether a point that was just previously plotted can be selected
 ALLOW_BACKTRACK = False
@@ -62,10 +62,10 @@ def pick_random_corner(point: Point, prev_point: Point = None,
     if prev_point is not None:
         if not allow_backtrack and (x_new, y_new) == prev_point:
             # Find change in points in (x, y)
-            dx, dy = (x - prev_point[0]), (y - prev_point[1])
+            dx, dy = (prev_point[0] - x), (prev_point[1] - y)
 
             # Create list of possible options for (dx, dy)
-            options = [(dx, -dy), (-dx, dy), (-dx, -dy)]
+            options = ((dx, -dy), (-dx, dy), (-dx, -dy))
 
             # Choose a random option
             (dx, dy) = choice(options)
@@ -73,6 +73,9 @@ def pick_random_corner(point: Point, prev_point: Point = None,
             # Determine new (x, y) point when backtracking is disallowed
             x_new = x + dx
             y_new = y + dy
+
+            if (x_new, y_new) == prev_point:
+                raise "Error! xnew, ynew cannot be prev point"
 
     return (x_new, y_new)
 
@@ -106,12 +109,13 @@ def animate(i):
              markerfacecolor="blue", markersize=5, linewidth=1)
 
     # Make a beep for each plot
-    beep()
+    # beep()
 
 
 def main():
     """ Main function that plots the random walk. """
-    ani = FuncAnimation(plt.gcf(), animate, interval=TIME_DELTA_MS)
+    ani = FuncAnimation(plt.gcf(), animate, interval=TIME_DELTA_MS,
+                        frames=NUM_OF_POINTS, repeat=False)
 
     plt.tight_layout()
     plt.show()
