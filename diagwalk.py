@@ -3,7 +3,7 @@ from matplotlib.animation import FuncAnimation
 from random import random
 from typing import Tuple
 
-# initialize number of points
+# Initialize number of points
 NUM_OF_POINTS = 10
 
 # Establish the origin position; (0, 0) is the typical tuple
@@ -22,12 +22,17 @@ plt.style.use("fivethirtyeight")
 x_vals = [ORIGIN[0]]
 y_vals = [ORIGIN[1]]
 
+# Create custom typing
+Point = Tuple[float, float]
 
-def pick_random_corner(point: Tuple[float, float]) -> Tuple[float, float]:
+
+def pick_random_corner(point: Point) -> Point:
     """ Picks a random corner in one diagonal direction.
 
         The point is determined based off of the given point,
         where the new point is (x+-1, y+-1) randomly selected.
+
+        Returns the new point (tuple).
     """
     (x, y) = point
     if random() < 0.5:
