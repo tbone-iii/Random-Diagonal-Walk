@@ -1,3 +1,4 @@
+from time import sleep
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from random import random, choice
@@ -104,9 +105,13 @@ def animate(i):
     # Create equal axes ratio
     plt.gca().set_aspect('equal', adjustable='box')
 
-    # Plot item
-    plt.plot(x_vals, y_vals, color="black", linestyle="solid", marker="o",
-             markerfacecolor="blue", markersize=5, linewidth=1)
+    # Plot all points
+    plt.plot(x_vals, y_vals, color="black", linestyle="solid",
+             marker="o", markerfacecolor="blue", markersize=5, linewidth=1)
+
+    # Adjust the color of the last point
+    plt.plot(x_vals[-1], y_vals[-1], color="black", linestyle="solid",
+             marker="o", markerfacecolor="cyan", markersize=5, linewidth=1)
 
     # Make a beep for each plot
     # beep()
