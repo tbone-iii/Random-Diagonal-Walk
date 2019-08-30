@@ -2,27 +2,32 @@ import time
 import winsound
 from collections import namedtuple
 from functools import partial
-from random import choice, random
+from random import choice, random, seed
 from typing import Tuple
-from math import hypot
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
+# SET RANDOM SEED
+# seed(a=42069)
+
 # Initialize number of points
-NUM_OF_POINTS = 25
+NUM_OF_POINTS = 20
 
 # Establish the origin position; (0, 0) is the typical tuple
 ORIGIN = (0, 0)
 
-# Establish the time difference (essentially, the speed)
+# Establish the time difference between points plotted
 TIME_DELTA_MS = 100
 
 # Bool for whether a point that was just previously plotted can be selected
 ALLOW_BACKTRACK = False
 
+# Smoothness factor for interpolation
+SMOOTHNESS = 15
+
 # Set the figure size in inches
-FIGSIZE = (12, 7)
+FIGSIZE = (12, 10)
 
 # Configure the style for pyplot
 plt.style.use("fivethirtyeight")
@@ -96,10 +101,11 @@ def init_fig(fig, ax, artists):
     return artists
 
 
-def frame_iter(points):
+def frame_iter(points_interp: Tuple[list, list]) -> Tuple[list, list]:
     """ Iterate through frames to determine new random point list. """
     # ? Possibly pass in number of points and use range instead of enumerate
-    x_vals, y_vals = points
+    x_vals, y_vals = points_interp
+
     # Yield the x values and y values up to and including ith index
     for i, _ in enumerate(x_vals):
         yield x_vals[:(i + 1)], y_vals[:(i + 1)]
@@ -109,27 +115,53 @@ def update_artists(frames, artists):
     """ Update artists with data from each frame. """
     x_vals, y_vals = frames
 
-    # Set the main plot data and the time text
-    artists.main_plot.set_data(x_vals, y_vals)
+    # These are the main marker points
+    x_vals_main = x_vals[::(artists.smoothness + 1)]
+    y_vals_main = y_vals[::(artists.smoothness + 1)]
+
+    # ! Plot the intermediate points (interp)
+    artists.interp_plot.set_data(x_vals, y_vals)
+    artists.interp_plot.set_color("black")
+    artists.interp_plot.set_linewidth(1)
+    artists.interp_plot.set_markersize(0)
+    # artists.interp_plot.set_marker(".")
+    # artists.interp_plot.set_markerfacecolor("yellow")
+
+    # ! Set the main plot data and the time text
+    artists.main_plot.set_data(x_vals_main, y_vals_main)
     artists.ax_text.set_text(
         f"{time.perf_counter() - artists.initial_time: 0.3f}s")
 
     # Create equal axes ratio and set lims
     artists.main_ax.set_aspect('equal', adjustable='box')
-    artists.main_ax.set_xlim((min(x_vals) - 1, max(x_vals) + 1))
-    artists.main_ax.set_ylim((min(y_vals) - 1, max(y_vals) + 1))
+    artists.main_ax.set_xlim((min(x_vals) - 1/2, max(x_vals) + 1/2))
+    artists.main_ax.set_ylim((min(y_vals) - 1/2, max(y_vals) + 1/2))
 
     # Set main plot properties
     artists.main_plot.set_color("black")
-    artists.main_plot.set_linewidth(1)
+    artists.main_plot.set_linewidth(0)
     artists.main_plot.set_marker("o")
     artists.main_plot.set_markersize(5)
     artists.main_plot.set_markerfacecolor("blue")
 
-    # Plot the last point with its own properties
+    # # ? Show every point text
+    # if len(x_vals_main) == 17 and artists.flag.flag is False:
+    #     artists.flag.flag = True
+    #     i = 0
+    #     for x, y in zip(x_vals, y_vals):
+    #         artists.main_ax.text(x=x, y=y, s=f"{i}")
+    #         i += 1
+
+    # ! Plot the origin with its own properties
+    artists.origin_plot.set_data(x_vals[0], y_vals[0])
+    artists.origin_plot.set_marker("o")
+    artists.origin_plot.set_markersize(8)
+    artists.origin_plot.set_markerfacecolor("red")
+
+    # ! Plot the last point with its own properties
     artists.last_point_plot.set_data(x_vals[-1], y_vals[-1])
     artists.last_point_plot.set_marker("o")
-    artists.last_point_plot.set_markersize(5)
+    artists.last_point_plot.set_markersize(8)
     artists.last_point_plot.set_markerfacecolor("cyan")
 
 
@@ -144,7 +176,7 @@ def generate_random_points(num_of_points: int) -> Tuple[list, list]:
     y_vals = [0]
 
     # Begin random point generation loop
-    for i in range(num_of_points):
+    for i in range(num_of_points - 1):
         # Selects a random corner to plot
         if i >= 2:
             prev_point = x_vals[-2], y_vals[-2]
@@ -191,14 +223,25 @@ def linear_interp(points: Tuple[list, list],
         E.G. ([1, 2, 3, 4], [1, 6, 9, 1]) <-> (x_vals, y_vals)
     """
     x_vals, y_vals = points
-    interp_points = ([], [])
+    interp_points = [[], []]
 
     # TODO: Refactor to make more Pythonic
     num_points = len(x_vals)
     for i in range(num_points - 1):
         x0, y0 = x_vals[i], y_vals[i]
         x1, y1 = x_vals[i + 1], y_vals[i + 1]
-        interp_points_temp = linear_interpolator(x0=x0, y0=y0, x1=x1, y1=y1)
+        interp_points_temp = linear_interpolator(
+            x0=x0, y0=y0, x1=x1, y1=y1, num_of_points=smoothness)
+
+        # Prevents double counting due to calling x0 and x1 twice
+        if i == num_points - 2:
+            interp_points[0] += interp_points_temp[0]
+            interp_points[1] += interp_points_temp[1]
+        else:
+            interp_points[0] += interp_points_temp[0][:-1]
+            interp_points[1] += interp_points_temp[1][:-1]
+
+    return tuple(interp_points)
 
 
 def main():
@@ -210,20 +253,41 @@ def main():
     # Generate the random walk points
     points = generate_random_points(num_of_points=NUM_OF_POINTS)
 
+    # Generate the interpolated points
+    points_interp = linear_interp(points=points, smoothness=SMOOTHNESS)
+
     # Initialize the artists with empty data
     Artists = namedtuple(
         "Artists",
-        ("main_plot", "last_point_plot", "ax_text", "main_ax", "initial_time"))
+        ("main_plot",
+         "last_point_plot",
+         "interp_plot",
+         "origin_plot",
+         "ax_text",
+         "main_ax",
+         "initial_time",
+         "smoothness",
+         "flag"
+         )
+    )
+
+    class Flag():
+        flag = False
+
     artists = Artists(plt.plot([], [], animated=True)[0],
+                      plt.plot([], [], animated=True)[0],
+                      plt.plot([], [], animated=True)[0],
                       plt.plot([], [], animated=True)[0],
                       ax.text(x=0.69, y=0.90, s="",
                               transform=fig.transFigure),
                       ax,
-                      time.perf_counter())
+                      time.perf_counter(),
+                      SMOOTHNESS,
+                      Flag)
 
     # Apply the plotting functions
     init = partial(init_fig, fig=fig, ax=ax, artists=artists)
-    step = partial(frame_iter, points=points)
+    step = partial(frame_iter, points_interp=points_interp)
     update = partial(update_artists, artists=artists)
 
     # Create the animation
@@ -232,16 +296,19 @@ def main():
         func=update,
         frames=step,
         init_func=init,
-        interval=TIME_DELTA_MS,
-        repeat=False
+        repeat=False,
+        save_count=len(points_interp[0])
     )
+
+    # Calculate the desired FPS
+    FPS = SMOOTHNESS / (TIME_DELTA_MS/1000)
 
     # Save the animation
     anim.save(
         filename=r"media\sample1.mp4",
-        fps=1000/(TIME_DELTA_MS),
+        fps=FPS,
         extra_args=['-vcodec', 'libx264'],
-        dpi=300,
+        dpi=300
     )
     # # Show the animation
     # plt.tight_layout()
