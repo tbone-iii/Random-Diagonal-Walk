@@ -262,7 +262,7 @@ def main():
 
     # Calculate the smoothness based on time difference between points and FPS
     # Smoothness factor for interpolation (number of intermediate points)
-    SMOOTHNESS = round(FPS * TIME_DELTA_MS/1000)
+    SMOOTHNESS = round(FPS * TIME_DELTA_MS/1000) - 1
 
     # Generate the interpolated points
     points_interp = linear_interp(points=points, smoothness=SMOOTHNESS)
