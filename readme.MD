@@ -1,3 +1,3 @@
 Example of random diagonal walk.
 
-<img src="https://github.com/tbone-iii/Random-Diagonal-Walk/blob/master/media/sample1.gif" type="img/gif">
+<video width="600" height="500" src="https://raw.githubusercontent.com/tbone-iii/Random-Diagonal-Walk/master/media/sample1.mp4" controls="controls"></video>
