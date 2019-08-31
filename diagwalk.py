@@ -1,4 +1,3 @@
-import time
 import winsound
 from collections import namedtuple
 from functools import partial
@@ -23,8 +22,11 @@ TIME_DELTA_MS = 100
 # Bool for whether a point that was just previously plotted can be selected
 ALLOW_BACKTRACK = False
 
-# Smoothness factor for interpolation
-SMOOTHNESS = 15
+# Set FPS of animation (frames per second)
+FPS = 60
+
+# Set the animation DPI (dots per inch), essentially resolution
+DPI = 100
 
 # Set the figure size in inches
 FIGSIZE = (12, 10)
@@ -130,7 +132,7 @@ def update_artists(frames, artists):
     # ! Set the main plot data and the time text
     artists.main_plot.set_data(x_vals_main, y_vals_main)
     artists.ax_text.set_text(
-        f"{time.perf_counter() - artists.initial_time: 0.3f}s")
+        f"{len(x_vals)/FPS: 0.3f}s")
 
     # Create equal axes ratio and set lims
     artists.main_ax.set_aspect('equal', adjustable='box')
@@ -253,6 +255,10 @@ def main():
     # Generate the random walk points
     points = generate_random_points(num_of_points=NUM_OF_POINTS)
 
+    # Calculate the smoothness based on time difference between points and FPS
+    # Smoothness factor for interpolation (number of intermediate points)
+    SMOOTHNESS = round(FPS * TIME_DELTA_MS/1000)
+
     # Generate the interpolated points
     points_interp = linear_interp(points=points, smoothness=SMOOTHNESS)
 
@@ -265,12 +271,12 @@ def main():
          "origin_plot",
          "ax_text",
          "main_ax",
-         "initial_time",
          "smoothness",
          "flag"
          )
     )
 
+    # Create a flag class for debugging point text
     class Flag():
         flag = False
 
@@ -281,7 +287,6 @@ def main():
                       ax.text(x=0.69, y=0.90, s="",
                               transform=fig.transFigure),
                       ax,
-                      time.perf_counter(),
                       SMOOTHNESS,
                       Flag)
 
@@ -300,15 +305,12 @@ def main():
         save_count=len(points_interp[0])
     )
 
-    # Calculate the desired FPS
-    FPS = SMOOTHNESS / (TIME_DELTA_MS/1000)
-
     # Save the animation
     anim.save(
         filename=r"media\sample1.mp4",
         fps=FPS,
         extra_args=['-vcodec', 'libx264'],
-        dpi=300
+        dpi=DPI
     )
     # # Show the animation
     # plt.tight_layout()
