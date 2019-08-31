@@ -11,7 +11,7 @@ from matplotlib.animation import FuncAnimation
 # seed(a=42069)
 
 # Initialize number of points
-NUM_OF_POINTS = 20
+NUM_OF_POINTS = 50
 
 # Establish the origin position; (0, 0) is the typical tuple
 ORIGIN = (0, 0)
@@ -95,7 +95,11 @@ def init_fig(fig, ax, artists):
     """ Initailizes the figure. Used to draw the first frame for the animation.
     """
     # Set plot title
-    ax.set_title(f"Random Diagonal Walk")
+    ax.set_title(f"Random Diagonal Walk\n"
+                 f"({NUM_OF_POINTS} points,"
+                 f" {TIME_DELTA_MS} ms between points,"
+                 f" {FPS} fps"
+                 f" backtrack allowed: {ALLOW_BACKTRACK})")
 
     # Create equal axes ratio
     ax.set_aspect('equal', adjustable='box')
@@ -250,7 +254,8 @@ def main():
     """ Main function that plots the random walk. """
     # Create the plot
     fig, ax = plt.subplots(figsize=FIGSIZE)
-    ax.grid()
+    ax.grid("off")
+    ax.axis("off")
 
     # Generate the random walk points
     points = generate_random_points(num_of_points=NUM_OF_POINTS)
@@ -284,7 +289,7 @@ def main():
                       plt.plot([], [], animated=True)[0],
                       plt.plot([], [], animated=True)[0],
                       plt.plot([], [], animated=True)[0],
-                      ax.text(x=0.69, y=0.90, s="",
+                      ax.text(x=0.69, y=0.10, s="",
                               transform=fig.transFigure),
                       ax,
                       SMOOTHNESS,
